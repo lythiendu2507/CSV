@@ -1,3 +1,4 @@
+
 const resolvers = {
 	// QUERY
 	Query: {
@@ -5,12 +6,29 @@ const resolvers = {
 			await mongoDataMethods.getAllProducts(),
 		product: async (parent, { id }, { mongoDataMethods }) =>
 			await mongoDataMethods.getProductById(id),
+		
 
 		producttypes: async (parent, args, { mongoDataMethods }) =>
 			await mongoDataMethods.getAllProductTypes(),
 		producttype: async (parent, { id }, { mongoDataMethods }) =>
-			await mongoDataMethods.getProductTypeById(id)
+			await mongoDataMethods.getProductTypeById(id),
+		someProducts: async (parent, args, context, info) => {
+
+				const limit = 5;
+		  
+				const page = args.page;
+		  
+				const pages = getAllProducts().length / limit;
+		  
+				return getAllProducts().slice(page, limit);
+		  
+     	},
+		  
 	},
+		  
+
+	
+ 
 
 	Product: {
 		producttype: async ({ producttypeId }, args, { mongoDataMethods }) =>

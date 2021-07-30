@@ -4,8 +4,14 @@ const typeDefs = gql`
 	type Product {
 		id: ID
 		name: String
-		price: String
+		old_price: String
+  		sale_price: String
 		producttype: ProductType
+		image_128: String
+  		image_512: String
+  		image_256: String
+		date_up:String
+		description: String
 	}
 
 	type ProductType {
@@ -20,6 +26,7 @@ const typeDefs = gql`
 		product(id: ID!): Product
 		producttypes: [ProductType]
 		producttype(id: ID!): ProductType
+		someProducts(page: String): [Product!]!
 	}
 
 	type Mutation {

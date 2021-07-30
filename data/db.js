@@ -8,6 +8,7 @@ const mongoDataMethods = {
 	getProductById: async id => await Product.findById(id),
 	getAllProductTypes: async () => await ProductType.find(),
 	getProductTypeById: async id => await ProductType.findById(id),
+	
 	createProductType: async args => {
 		const newProductType = new ProductType(args)
 		return await newProductType.save()
