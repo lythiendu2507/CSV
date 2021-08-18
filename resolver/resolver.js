@@ -1,4 +1,23 @@
+const { create } = require("../models/Product")
+const User = require("../models/User")
+const jwt = require("jsonwebtoken")
+const bcrypt = require("bcrypt")
+const mongoDataMethods = require("../data/db")
+const SECRET_KEY = "MOBA"
+const { UserInputError } = require('apollo-server-express')
 
+const {validateSignupInput, validateLoginInput} = require('../ulti/validators')
+const Login = require("../models/Login")
+
+
+function gererateToken(user){
+	return jwt.sign({
+		id: user.id,
+		email: user.email,
+
+	}, SECRET_KEY, { expiresIn: '1h' })
+
+}
 const resolvers = {
 	// QUERY
 	Query: {
@@ -6,29 +25,20 @@ const resolvers = {
 			await mongoDataMethods.getAllProducts(),
 		product: async (parent, { id }, { mongoDataMethods }) =>
 			await mongoDataMethods.getProductById(id),
-		
+
 
 		producttypes: async (parent, args, { mongoDataMethods }) =>
 			await mongoDataMethods.getAllProductTypes(),
 		producttype: async (parent, { id }, { mongoDataMethods }) =>
 			await mongoDataMethods.getProductTypeById(id),
-		someProducts: async (parent, args, context, info) => {
 
-				const limit = 5;
-		  
-				const page = args.page;
-		  
-				const pages = getAllProducts().length / limit;
-		  
-				return getAllProducts().slice(page, limit);
-		  
-     	},
-		  
+		user: async (parent, { id }, { mongoDataMethods }) =>
+			await mongoDataMethods.getUserById(id),
+
 	},
-		  
 
-	
- 
+
+
 
 	Product: {
 		producttype: async ({ producttypeId }, args, { mongoDataMethods }) =>
@@ -45,7 +55,80 @@ const resolvers = {
 		createProductType: async (parent, args, { mongoDataMethods }) =>
 			await mongoDataMethods.createProductType(args),
 		createProduct: async (parent, args, { mongoDataMethods }) =>
-			await mongoDataMethods.createProduct(args)
+			await mongoDataMethods.createProduct(args),
+		async login(_,{email,password}){
+			const {errors, valid} = validateLoginInput(email,password)
+			if(!valid) {
+				throw new UserInputError('Errors',{errors})	
+			}
+			const user = await  User.findOne({email})
+			if(!user){
+				errors.general = 'Email không khả dụng'
+				throw new UserInputError('Errors',{errors})
+			}
+			
+			const match = await bcrypt.compare(password, user.password)
+			if(!match){
+				errors.general = 'Mật khẩu không khả dụng'
+				throw new UserInputError('Errors', {errors})
+			}
+			const token = gererateToken(user)
+
+			return {
+				...user._doc,
+				id: user._id,
+				token
+			}
+		},
+		async signup(_, { email, password }) {
+
+
+			const{ valid, errors} = validateSignupInput(email, password)
+			if(!valid){
+				throw new UserInputError('Errors', {errors})
+			}
+			const user = await User.findOne({ email });
+			
+			const specialEmail = /^[a-zA-Z0-9\.\_\@\-]*$/;
+			const reg = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+			
+			if (email && specialEmail.test(email) && reg.test(email)) {
+				if (user) {
+					throw new UserInputError('Email đã được sử dụng', {
+						error: {
+							email: 'Email đã được sử dụng'
+						}
+					})
+				}
+			}
+			else {
+				return new UserInputError('Email không hợp lệ', {
+					error: {
+						email: 'Email không hợp lệ'
+					}
+				});
+			}
+			
+
+
+			password = await bcrypt.hash(password, 12)
+			const newUser = new User({
+				email,
+				password,
+				createAt: new Date().toISOString()
+			})
+
+			const res = await newUser.save()
+
+			const token = gererateToken(res)
+
+			return {
+				...res._doc,
+				id: res._id,
+				token
+			}
+		}
+
 	}
 }
 
