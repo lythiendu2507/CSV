@@ -5,9 +5,10 @@ const bcrypt = require("bcrypt")
 const mongoDataMethods = require("../data/db")
 const SECRET_KEY = "MOBA"
 const { UserInputError } = require('apollo-server-express')
+const checkAuth = require('../ulti/check-auth')
 
 const {validateSignupInput, validateLoginInput} = require('../ulti/validators')
-const Login = require("../models/Login")
+
 
 
 function gererateToken(user){
@@ -26,7 +27,11 @@ const resolvers = {
 		product: async (parent, { id }, { mongoDataMethods }) =>
 			await mongoDataMethods.getProductById(id),
 
-
+		cart: async (parent, args, { mongoDataMethods }) =>
+			await mongoDataMethods.getCartById(id),
+		carts: async (parent, args, { mongoDataMethods }) =>
+			await mongoDataMethods.getAllCart(),
+			
 		producttypes: async (parent, args, { mongoDataMethods }) =>
 			await mongoDataMethods.getAllProductTypes(),
 		producttype: async (parent, { id }, { mongoDataMethods }) =>
@@ -42,12 +47,29 @@ const resolvers = {
 
 	Product: {
 		producttype: async ({ producttypeId }, args, { mongoDataMethods }) =>
-			await mongoDataMethods.getProductTypeById(producttypeId)
+			await mongoDataMethods.getProductTypeById(producttypeId),
+		user: async ({ userId }, args, { mongoDataMethods }) =>
+			await mongoDataMethods.getUserById(userId),
+		carts: async ({ id }, args, { mongoDataMethods }) =>
+			await mongoDataMethods.getAllCart({ cartId: id })
 	},
 
 	ProductType: {
 		products: async ({ id }, args, { mongoDataMethods }) =>
 			await mongoDataMethods.getAllProducts({ producttypeId: id })
+	},
+
+	User: {
+		products: async ({ id }, args, { mongoDataMethods }) =>
+			await mongoDataMethods.getAllProducts({ userId: id }),
+		carts: async ({ id }, args, { mongoDataMethods }) =>
+			await mongoDataMethods.getAllCart({ cartId: id })
+	},
+	Cart: {
+		product: async ({ producttypeId }, args, { mongoDataMethods }) =>
+			await mongoDataMethods.getProductById(ProductId),
+		user: async ({ userId }, args, { mongoDataMethods }) =>
+			await mongoDataMethods.getUserById(userId)
 	},
 
 	// MUTATION
@@ -56,6 +78,8 @@ const resolvers = {
 			await mongoDataMethods.createProductType(args),
 		createProduct: async (parent, args, { mongoDataMethods }) =>
 			await mongoDataMethods.createProduct(args),
+		createCart: async (parent, args, { mongoDataMethods }) =>
+			await mongoDataMethods.createCart(args),
 		async login(_,{email,password}){
 			const {errors, valid} = validateLoginInput(email,password)
 			if(!valid) {
@@ -80,10 +104,10 @@ const resolvers = {
 				token
 			}
 		},
-		async signup(_, { email, password }) {
+		async signup(_, { email, password, name, phone }) {
 
 
-			const{ valid, errors} = validateSignupInput(email, password)
+			const{ valid, errors} = validateSignupInput(email, password, name, phone)
 			if(!valid){
 				throw new UserInputError('Errors', {errors})
 			}
@@ -115,6 +139,8 @@ const resolvers = {
 			const newUser = new User({
 				email,
 				password,
+				name,
+				phone,
 				createAt: new Date().toISOString()
 			})
 

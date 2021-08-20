@@ -1,6 +1,8 @@
 module.exports.validateSignupInput =(
     email,
-    password
+    password,
+    name,
+    phone
 
 ) =>{
     const errors ={}
@@ -8,9 +10,16 @@ module.exports.validateSignupInput =(
     {
         errors.email ="Email không được để trống"
     }
+    
     if(password.trim()=== '')
     {
         errors.password ='Mật khẩu không được để trống'
+    }
+    if(name.trim() === ''){
+        errors.name = 'Tên của bạn không được để trống'
+    }
+    if(phone.trim()=== ''){
+        errors.phone = 'Số điện thoại không được để trống'
     }
 
 

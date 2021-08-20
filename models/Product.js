@@ -20,9 +20,12 @@ const ProductSchema = new Schema({
   	image_256: {
 		  type:String},
 
-	date_up:{
-		type:String},
-
+	createAt:{
+		type:String
+	},
+	userId:{
+		type:String
+	},
 	discription: {
 		type: String
 	},

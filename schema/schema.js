@@ -2,7 +2,7 @@ const { gql } = require('apollo-server-express')
 
 const typeDefs = gql`
 	type Product {
-		id: ID
+		id: ID!
 		name: String
 		old_price: String
   		sale_price: String
@@ -10,8 +10,11 @@ const typeDefs = gql`
 		image_128: String
   		image_512: String
   		image_256: String
-		date_up:String
-		description: String
+		createAt:String
+		user: User
+		discription: String
+		carts: [Cart]
+		
 	}
 
 	type ProductType {
@@ -27,7 +30,19 @@ const typeDefs = gql`
 		email: String!
 		password: String!
 		createAt: String!
+		products: [Product]
+		carts:[Cart]
 	}
+
+	type Cart{
+		id: ID!
+		createAt: String
+		user: User
+		product: Product
+		status: String
+
+	}
+
 	type SignupInput{
 		email: String!
 		password:String!
@@ -37,11 +52,14 @@ const typeDefs = gql`
 
 	# ROOT TYPE
 	type Query {
-		products(condition:String): [Product]
+		products: [Product]
 		product(id: ID!): Product
 		producttypes: [ProductType]
 		producttype(id: ID!): ProductType
 		user(id: ID!): User
+		cart(id: ID!): Cart
+		carts: [Cart]
+		
 
 	}
 		# someProducts(page: String): [Product!]!
@@ -49,9 +67,11 @@ const typeDefs = gql`
 
 	type Mutation {
 		createProductType(name: String): ProductType
-		createProduct(name: String,old_price: Float,sale_price:Float,discription:String, producttypeId: ID!): Product
-		signup(email:String!, password: String! ): User!
+		createProduct(name: String,old_price: String,sale_price:String,discription:String, 
+		producttypeId: ID!, userId: ID!): Product
+		signup(email:String!, password: String!, name: String!, phone:String! ): User!
 		login(email:String!, password:String!): User!
+		createCart(status: String!, productId: String!, userId: String!): Cart
 
 	}
 `
