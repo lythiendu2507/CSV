@@ -29,9 +29,9 @@ const mongoDataMethods = {
 		const newProductType = new ProductType(args)
 		return await newProductType.save()
 	},
-	createProduct: async ({name,old_price,sale_price,discription, producttypeId, userId}) => {
+	createProduct: async ({name,old_price,sale_price,discription, producttypeId, userId,image_256}) => {
 		const newProduct = new Product({
-			name,old_price,sale_price,discription, producttypeId, userId,
+			name,old_price,sale_price,discription, producttypeId, userId,image_256,
 			createAt: new Date().toISOString()
 		})
 		return await newProduct.save()

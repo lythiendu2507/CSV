@@ -1,4 +1,5 @@
 const express = require('express')
+module.exports = require("jwt-decode");
 const { ApolloServer } = require('apollo-server-express')
 const mongoose = require('mongoose')
 const cors = require('cors')
@@ -9,6 +10,7 @@ const resolvers = require('./resolver/resolver')
 
 // Load db methods
 const mongoDataMethods = require('./data/db')
+const { formatError } = require('graphql')
 
 // Connect to MongoDB
 const connectDB = async () => {
@@ -36,7 +38,19 @@ const server = new ApolloServer({
 })
 
 const app = express()
-app.use(cors())
+app.use(cors()
+// ,{
+// 	formatError(err){
+// 		if(!err.originalError){
+// 			return err
+// 		}
+// 		const data = err.originalError.data
+// 		const message = err.message || 'Một lỗi đã xảy ra'
+// 		const code = err.originalError.code || 500
+// 		return {message: message, status:code , data: data}
+// }}
+)
+
 server.applyMiddleware({ app })
 
 app.listen({ port: process.env.PORT || 4000 }, () =>

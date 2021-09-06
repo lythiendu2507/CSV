@@ -32,14 +32,16 @@ const typeDefs = gql`
 		createAt: String!
 		products: [Product]
 		carts:[Cart]
+		message:String
+		phone:String!
 	}
 
 	type Cart{
 		id: ID!
-		createAt: String
+		createAt: String!
 		user: User
 		product: Product
-		status: String
+		status: String!
 
 	}
 
@@ -67,11 +69,12 @@ const typeDefs = gql`
 
 	type Mutation {
 		createProductType(name: String): ProductType
-		createProduct(name: String,old_price: String,sale_price:String,discription:String, 
+		createProduct(name: String,old_price: String,sale_price:String,discription:String,image_256: String, 
 		producttypeId: ID!, userId: ID!): Product
 		signup(email:String!, password: String!, name: String!, phone:String! ): User!
 		login(email:String!, password:String!): User!
 		createCart(status: String!, productId: String!, userId: String!): Cart
+		getUser(email:String!): User!
 
 	}
 `

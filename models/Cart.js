@@ -12,7 +12,7 @@ const CartSchema = new Schema({
         type:String
     },
     status: {
-       tyoe: String
+       type: String
     }
 
 })
