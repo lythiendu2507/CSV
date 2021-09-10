@@ -34,6 +34,8 @@ const typeDefs = gql`
 		carts:[Cart]
 		message:String
 		phone:String!
+		status: String
+    	confirmationCode: String
 	}
 
 	type Cart{

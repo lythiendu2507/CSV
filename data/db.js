@@ -6,7 +6,8 @@ const Cart = require('../models/Cart')
 
 
 const mongoDataMethods = {
-	getAllProducts: async () => await Product.find(),
+	getAllProducts: async (condition = null) =>
+		condition === null ? await Product.find() : await Product.find(condition),
 	getProductById: async id => await Product.findById(id),
 
 	getAllProductTypes: async () => await ProductType.find(),

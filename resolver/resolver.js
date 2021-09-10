@@ -7,7 +7,7 @@ const SECRET_KEY = "MOBA"
 const { UserInputError } = require('apollo-server-express')
 const checkAuth = require('../ulti/check-auth')
 const validator = require('validator')
-
+const nodemailer = require("nodemailer");
 const {validateSignupInput, validateLoginInput} = require('../ulti/validators')
 
 
@@ -20,6 +20,51 @@ function gererateToken(user){
 	}, SECRET_KEY, { expiresIn: '1h' })
 
 }
+
+const transport = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: "thiendu2507@gmail.com",
+    pass:  "0125789364",
+  },
+});
+function sendConfirmationEmail (name, email, confirmationCode){
+    console.log("Check");
+    transport.sendMail({
+      from: "thiendu2507@gmail.com",
+      to: email,
+      subject: "Hãy xác thực tài khoản của bạn",
+      html: `<h1>Xác thực email</h1>
+          <h2>xin chào ${name}</h2>
+          <p>Cảm ơn bạn đã đăng ký tài khoản của website chợ sinh viên Ptit. Để kích hoạt tài khoản hãy bấm váo đường dẫn bên dưới.</p>
+          <a href=http://localhost:3000/confirm/${confirmationCode}> Click here</a>
+          </div>`,
+    }).catch(err => console.log(err));
+};
+
+
+exports.verifyUser = (req, res, next) => {
+	User.findOne({
+	  confirmationCode: req.params.confirmationCode,
+	})
+	  .then((user) => {
+		if (!user) {
+		  return res.status(404).send({ message: "Không tìm thấy tài khoản." });
+		}
+  
+		user.status = "Đã kích hoạt";
+		user.save((err) => {
+		  if (err) {
+			res.status(500).send({ message: err });
+			return;
+		  }
+		});
+	  })
+	  .catch((e) => console.log("error", e));
+  };
+
+
+
 const resolvers = {
 	// QUERY
 	Query: {
@@ -54,6 +99,7 @@ const resolvers = {
 		carts: async ({ id }, args, { mongoDataMethods }) =>
 			await mongoDataMethods.getAllCart({ cartId: id })
 	},
+	
 
 	ProductType: {
 		products: async ({ id }, args, { mongoDataMethods }) =>
@@ -97,6 +143,9 @@ const resolvers = {
 		async login(_,{email,password}){
 			const error = ''
 			const {errors, valid} = validateLoginInput(email,password)
+
+		
+
 			if(!valid) {
 				throw new UserInputError('Errors',{errors})
 				error = errors
@@ -108,6 +157,13 @@ const resolvers = {
 				error = errors
 			}
 			
+
+			if(user.status !=="Active"){
+				errors.general = 'Email chưa được kích hoạt'
+				throw new UserInputError('Errors',{errors})
+				error = errors
+			}
+
 			const match = await bcrypt.compare(password, user.password)
 			if(!match){
 				errors.general = 'Mật khẩu không khả dụng'
@@ -136,7 +192,7 @@ const resolvers = {
 			const user = await User.findOne({ email });
 			
 			const specialEmail = /^[a-zA-Z0-9\.\_\@\-]*$/;
-			const reg = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+			const reg = /^[A-Za-z0-9]+[A-Za-z0-9]*@student.ptithcm.edu.vn$/;
 			
 			if (email && specialEmail.test(email) && reg.test(email)) {
 				if (user) {
@@ -149,15 +205,17 @@ const resolvers = {
 				}
 			}
 			else {
-				return new UserInputError('Email không hợp lệ', {
+				return new UserInputError('Email không hợp lệ, lưu ý: bạn phải sử dụng email mà nhà trường cấp', {
 					errors: {
-						email: 'Email không hợp lệ'
+						email: 'Email không hợp lệ, lưu ý: bạn phải sử dụng email mà nhà trường cấp'
 					}
 				});
 				error = errors
 			}
 			
-
+		
+	
+		  
 
 			password = await bcrypt.hash(password, 12)
 			const newUser = new User({
@@ -165,11 +223,32 @@ const resolvers = {
 				password,
 				name,
 				phone,
-				createAt: new Date().toISOString()
+				createAt: new Date().toISOString(),
+				status: "Chờ kích hoạt",
+				confirmationCode: "abcd"
 			})
 
-			const res = await newUser.save()
+			// nodemailer.sendConfirmationEmail(
+			// 	newUser.name,
+			// 	newUser.email,
+			// 	newUser.confirmationCode)
 
+
+			transport.sendMail({
+				from: "thiendu2507@gmail.com",
+				to: newUser.email,
+				subject: "Hãy xác thực tài khoản của bạn",
+				html: `<h1>Xác thực email</h1>
+					<h2>xin chào ${newUser.name}</h2>
+					<p>Cảm ơn bạn đã đăng ký tài khoản của website chợ sinh viên Ptit. Để kích hoạt tài khoản hãy bấm váo đường dẫn bên dưới.</p>
+					<a href=http://localhost:3000/confirm/${newUser.confirmationCode}> Click here</a>
+					</div>`,
+			  }).catch(err => console.log(err));
+
+			const res = await newUser.save()
+			
+			console.log("Tài khoản của bạn đã được đăng ký, hãy vào email của bạn để kích hoạt tài khoản!!!")
+			
 			const token = gererateToken(res)
 
 			return {
@@ -184,3 +263,6 @@ const resolvers = {
 }
 
 module.exports = resolvers
+
+
+
